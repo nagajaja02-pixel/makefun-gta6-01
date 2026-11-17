@@ -1,0 +1,11 @@
+import * as T from 'three';
+export function createMissions(scene,vehicles,police){let stage=0,elapsed=0,failed=false;const points=[new T.Vector3(0,0,42),new T.Vector3(42,0,0),new T.Vector3(-84,0,42),new T.Vector3(-126,0,-84)];
+ const marker=new T.Group();const ring=new T.Mesh(new T.TorusGeometry(3,.12,8,40),new T.MeshBasicMaterial({color:0xffd16d}));ring.rotation.x=Math.PI/2;marker.add(ring);const arrow=new T.Mesh(new T.ConeGeometry(.9,1.7,4),new T.MeshBasicMaterial({color:0xffd16d}));arrow.rotation.z=Math.PI;arrow.position.y=6;marker.add(arrow);const beam=new T.Mesh(new T.CylinderGeometry(.1,.1,20,6),new T.MeshBasicMaterial({color:0xffd16d,transparent:true,opacity:.4}));beam.position.y=10;marker.add(beam);scene.add(marker);
+ const titles=['Deliver the sealed tape','Borrow the Saffron GT','Bring the coupe to Sundial','Lose the signal. Lose the cops.','A clean frequency'];
+ const dialog=['INES / “The harbor board erased our homes. This tape proves it. Bring it to the relay on Palm Avenue.”','INES / “One more favor. A gold coupe holds the second ledger. Take it. Quietly is optional.”','INES / “Sundial garage. Keep the car in one piece. They know what you took.”','INES / “The ledger is live. Get out of their search radius. No more headlines.”','INES / “You gave this city its voice back. Keep driving, courier.”'];
+ function update(dt,p,input,time){elapsed+=dt;if(input.pressed.has('KeyR')&&failed){failed=false;elapsed=0}if(stage===0&&elapsed>120)failed=true;let goal=points[0];if(stage===1)goal=vehicles.target.mesh.position;if(stage===2)goal=points[2];if(stage===3)goal=points[3];
+ marker.position.copy(goal);marker.visible=stage<4;arrow.position.y=5.5+Math.sin(time*2)*.5;ring.rotation.z=time*.4;
+ if(!failed){if(stage===0&&p.position.distanceTo(points[0])<6){stage=1;elapsed=0;p.money+=400}else if(stage===1&&p.car===vehicles.target){stage=2;elapsed=0;police.crime(1)}else if(stage===2&&p.car===vehicles.target&&p.position.distanceTo(points[2])<7){stage=3;elapsed=0;p.money+=700;police.heat=3}else if(stage===3&&police.heat===0){stage=4;p.money+=1500;elapsed=0}}
+ return {title:failed?'Signal lost — press R to retry':titles[stage],dialog:dialog[stage],goal:stage<4?goal:null,stage,remaining:stage===0?Math.max(0,120-elapsed):null,failed};}
+ return {update,get stage(){return stage},set stage(v){stage=Math.max(0,Math.min(4,v));elapsed=0},marker};
+}
